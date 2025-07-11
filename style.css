@@ -1,0 +1,234 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* 그라데이션 배경 */
+    margin: 0;
+    color: #333;
+}
+
+.game-container {
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 화면 공통 스타일 */
+.screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    box-sizing: border-box;
+}
+
+/* 시작 화면 특정 스타일 */
+#start-screen h1 {
+    font-size: 2.5em;
+    color: #007bff;
+    margin-bottom: 20px;
+}
+
+#start-screen p {
+    font-size: 1.2em;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+/* 랭킹 화면 스타일 */
+#ranking-screen h1 {
+    font-size: 2.2em;
+    color: #4a4a4a;
+    margin-bottom: 20px;
+}
+
+#ranking-list {
+    list-style: none; /* 기본 리스트 스타일 제거 */
+    padding: 0;
+    width: 80%;
+    margin-bottom: 30px;
+}
+
+#ranking-list li {
+    background-color: #e9ecef;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1em;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#ranking-list li:nth-child(1) { background-color: #ffda6a; font-weight: bold; } /* 1위 강조 */
+#ranking-list li:nth-child(2) { background-color: #ced4da; font-weight: bold; } /* 2위 강조 */
+#ranking-list li:nth-child(3) { background-color: #e0bb82; font-weight: bold; } /* 3위 강조 */
+
+#ranking-list li span:first-child {
+    font-weight: bold;
+    color: #007bff;
+}
+
+#ranking-list li span:last-child {
+    color: #28a745;
+    font-weight: bold;
+}
+
+
+/* 게임 화면 요소들 */
+h1 {
+    color: #4a4a4a;
+    margin-bottom: 20px;
+    font-size: 2em;
+}
+
+.info-area {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #007bff;
+    gap: 30px; /* 각 p 태그 사이에 30px 간격 추가 */
+}
+
+.problem-area {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 25px 20px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+}
+
+.problem-area p {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #007bff;
+    margin: 0;
+}
+
+.problem-area p sup {
+    font-size: 0.6em;
+    vertical-align: super;
+}
+
+.problem-area span.final-score {
+    font-size: 2.2em;
+    color: #28a745;
+}
+
+
+.input-area {
+    margin-bottom: 25px;
+}
+
+.input-area label {
+    display: block;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+#c-input {
+    width: calc(100% - 20px);
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1.2em;
+    text-align: center;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+#c-input:focus {
+    border-color: #007bff;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    margin-top: 5px; /* 버튼 간격 조정 */
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* 랭킹 초기화 버튼과 같은 특별한 버튼을 위한 스타일 */
+.red-button {
+    background-color: #dc3545; /* 빨간색 배경 */
+}
+
+.red-button:hover {
+    background-color: #c82333; /* 호버 시 더 진한 빨간색 */
+}
+
+.result-area {
+    min-height: 30px;
+    margin-bottom: 20px;
+}
+
+#result-message {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #28a745;
+}
+
+#result-message.incorrect {
+    color: #dc3545;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#stop-game-button {
+    background-color: #dc3545;
+}
+
+#stop-game-button:hover {
+    background-color: #c82333;
+}
+
+/* 랭킹 보기 버튼과 시작 버튼 사이 간격 */
+#start-screen button {
+    margin-top: 15px;
+}
