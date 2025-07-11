@@ -27,9 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const MIN_SCORE_PER_QUESTION = 10;
     const TIME_LIMIT_FOR_MAX_SCORE = 2;
     const TIME_LIMIT_FOR_MIN_SCORE = 15;
-    
-    // 서버 API 주소
-    const SERVER_URL = 'http://localhost:3000/api'; // 서버가 실행되는 주소와 포트를 맞춰야 함
+    const MAX_RANKING_ENTRIES = 10;
+    const RESET_PASSWORD = "إذا هَبَّتْ رياحك فاغتنمها"; // 랭킹 초기화 비밀번호
 
     // 게임 상태 변수
     let correctC = 0;
@@ -141,8 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultMessage.classList.remove('incorrect');
         resultMessage.style.color = '#333';
 
-        // 서버에 점수 저장 시도
-        saveScoreToServer(currentScore, currentPlayerName);
+        saveScoreToRanking(currentScore, currentPlayerName);
 
         setTimeout(() => {
             gameScreen.style.display = 'none';
@@ -200,161 +198,100 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 랭킹 시스템 함수 (서버 통신) ---
+    // --- 랭킹 시스템 함수 ---
 
-    // 이름 중복 확인 함수 (서버 API 사용)
-    async function isNameTaken(name) {
-        try {
-            const response = await fetch(`${SERVER_URL}/ranking/checkName/${encodeURIComponent(name)}`);
-            if (!response.ok) {
-                // 서버에서 4xx 또는 5xx 오류가 발생한 경우
-                const errorData = await response.json();
-                throw new new Error(errorData.error || '이름 중복 확인 중 서버 오류 발생');
-            }
-            const data = await response.json();
-            return data.isTaken;
-        } catch (error) {
-            console.error('이름 중복 확인 실패:', error);
-            alert('이름 중복 확인 중 네트워크 오류가 발생했습니다. 서버가 실행 중인지 확인해주세요.');
-            return true; // 네트워크 오류 발생 시 안전하게 중복으로 처리
-        }
+    function getRanking() {
+        const rankingString = localStorage.getItem('pythagoreanRanking');
+        return rankingString ? JSON.parse(rankingString) : [];
     }
 
-    // 점수를 서버에 저장하는 함수
-    async function saveScoreToServer(score, playerName) {
-        try {
-            const response = await fetch(`${SERVER_URL}/ranking`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: playerName, score: score }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '랭킹 저장 실패');
-            }
-
-            const data = await response.json();
-            console.log(data.message);
-            // alert('점수가 랭킹에 성공적으로 등록되었습니다!'); // 너무 자주 뜨면 불편하니 주석 처리
-        } catch (error) {
-            console.error('점수 서버 저장 실패:', error);
-            alert(`점수 저장에 실패했습니다: ${error.message}. 서버를 확인해주세요.`);
-        }
+    function isNameTaken(name) {
+        const ranking = getRanking();
+        return ranking.some(entry => entry.name.toLowerCase() === name.toLowerCase());
     }
 
-    // 랭킹을 서버에서 가져와 표시하는 함수
-    async function displayRanking() {
-        rankingList.innerHTML = '<li>랭킹을 불러오는 중...</li>';
-        try {
-            const response = await fetch(`${SERVER_URL}/ranking`);
-            if (!response.ok) {
-                throw new Error('랭킹을 불러오지 못했습니다. 서버 오류.');
-            }
-            const ranking = await response.json();
+    function saveScoreToRanking(score, playerName) {
+        let ranking = getRanking();
+        
+        ranking = ranking.filter(entry => entry.name.toLowerCase() !== playerName.toLowerCase());
 
-            rankingList.innerHTML = ''; // 기존 내용 지우기
+        ranking.push({ score: score, name: playerName, date: new Date().toLocaleString() });
 
-            if (ranking.length === 0) {
-                rankingList.innerHTML = '<li>아직 랭킹이 없습니다. 게임을 플레이하여 점수를 등록해보세요!</li>';
-                return;
-            }
+        ranking.sort((a, b) => b.score - a.score);
 
-            ranking.forEach((entry, index) => {
-                const listItem = document.createElement('li');
-                // 아랍어 글꼴이 지원되는 환경이라면 아랍어가 정상적으로 보입니다.
-                // 그렇지 않으면 네모나 깨진 글자로 보일 수 있습니다.
-                listItem.innerHTML = `
-                    <span>${index + 1}. ${entry.name}</span>
-                    <span>${entry.score}점</span>
-                    <span>(${entry.date})</span>
-                `;
-                rankingList.appendChild(listItem);
-            });
-        } catch (error) {
-            console.error('랭킹 로드 실패:', error);
-            rankingList.innerHTML = `<li>랭킹을 불러오는 데 실패했습니다: ${error.message}. 서버를 확인해주세요.</li>`;
+        if (ranking.length > MAX_RANKING_ENTRIES) {
+            ranking = ranking.slice(0, MAX_RANKING_ENTRIES);
         }
+
+        localStorage.setItem('pythagoreanRanking', JSON.stringify(ranking));
     }
 
-    // 랭킹 데이터를 서버에서 초기화하는 함수
-    async function clearRanking() {
+    function displayRanking() {
+        const ranking = getRanking();
+        rankingList.innerHTML = '';
+
+        if (ranking.length === 0) {
+            rankingList.innerHTML = '<li>아직 랭킹이 없습니다. 게임을 플레이하여 점수를 등록해보세요!</li>';
+            return;
+        }
+
+        ranking.forEach((entry, index) => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <span>${index + 1}. ${entry.name}</span>
+                <span>${entry.score}점</span>
+                <span>(${entry.date})</span>
+            `;
+            rankingList.appendChild(listItem);
+        });
+    }
+
+    // 랭킹 데이터를 LocalStorage에서 제거하는 함수 (비밀번호 확인 추가)
+    function clearRanking() {
         const confirmClear = confirm("정말로 랭킹을 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.");
         if (!confirmClear) {
-            return;
+            return; // 사용자가 취소한 경우 함수 종료
         }
 
         const enteredPassword = prompt("랭킹을 초기화하려면 비밀번호를 입력하세요:");
 
-        if (enteredPassword === null) {
+        if (enteredPassword === null) { // 사용자가 비밀번호 입력 프롬프트에서 취소한 경우
             alert("랭킹 초기화가 취소되었습니다.");
             return;
         }
 
-        // 비밀번호는 클라이언트에서 직접 비교하지 않고, 서버로 전송하여 서버에서 비교하도록 함
-        // (보안상 더 좋지만, 이 경우 SECRET_PASSWORD는 서버에만 존재하므로 클라이언트는 '무조건' 서버로 보내야 함)
-        // 여기서는 편의를 위해 클라이언트에서도 SECRET_PASSWORD를 직접 가지고 있습니다.
-        // 클라이언트 코드에 SECRET_PASSWORD가 노출되는 것은 보안상 좋지 않습니다.
-        // 실제 배포시에는 클라이언트에서 비밀번호를 입력받아 서버로 보내고, 서버에서만 비밀번호를 검증해야 합니다.
-        // 즉, script.js에서 RESET_PASSWORD 상수를 제거하고 서버로 무조건 보내는 방식이 좋습니다.
-        
-        // 현재는 편의상 클라이언트에도 비밀번호를 정의했으나, 실제 서비스에서는 클라이언트에서 서버로 '비밀번호'를 전송하고
-        // 서버에서만 그 비밀번호의 유효성을 검사해야 합니다.
-        // 따라서, 클라이언트의 RESET_PASSWORD는 제거하고, enteredPassword를 직접 서버로 보내는 것이 보안상 더 나은 방법입니다.
-        // 아래 코드는 클라이언트에서 입력받은 비밀번호를 그대로 서버로 전송하여 서버에서만 검증하는 방식입니다.
-
-        try {
-            const response = await fetch(`${SERVER_URL}/ranking/reset`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ password: enteredPassword }), // 입력된 비밀번호를 서버로 전송
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '랭킹 초기화 실패');
-            }
-
-            const data = await response.json();
-            alert(data.message);
-            displayRanking(); // 랭킹 초기화 후 다시 랭킹 불러오기
-        } catch (error) {
-            console.error('랭킹 초기화 오류:', error);
-            alert(`랭킹 초기화에 실패했습니다: ${error.message}`);
+        if (enteredPassword === RESET_PASSWORD) {
+            localStorage.removeItem('pythagoreanRanking');
+            alert("랭킹이 성공적으로 초기화되었습니다.");
+            displayRanking(); // 랭킹 화면이 열려 있다면 즉시 업데이트
+        } else {
+            alert("비밀번호가 틀렸습니다. 랭킹 초기화에 실패했습니다.");
         }
     }
 
     // --- 이벤트 리스너 설정 ---
 
-    startGameButton.addEventListener('click', async () => {
+    startGameButton.addEventListener('click', () => {
         let nameValid = false;
         let userName = "";
 
         while (!nameValid) {
             userName = prompt("플레이어 이름을 입력하세요 (최대 10자):", "이름");
 
-            if (userName === null) { // 사용자가 '취소'를 누른 경우
+            if (userName === null) {
                 return;
             }
 
-            userName = userName.trim(); // 앞뒤 공백 제거
+            userName = userName.trim();
 
             if (userName === "") {
                 alert("이름은 비워둘 수 없습니다. 다시 입력해주세요.");
             } else if (userName.length > 10) {
                 alert("이름은 최대 10자까지 입력할 수 있습니다. 다시 입력해주세요.");
+            } else if (isNameTaken(userName)) {
+                alert(`'${userName}'은(는) 이미 사용 중인 이름입니다. 다른 이름을 입력해주세요.`);
             } else {
-                // 서버에서 이름 중복 확인
-                const isTaken = await isNameTaken(userName);
-                if (isTaken) {
-                    alert(`'${userName}'은(는) 이미 사용 중인 이름입니다. 다른 이름을 입력해주세요.`);
-                } else {
-                    nameValid = true;
-                }
+                nameValid = true;
             }
         }
 
@@ -372,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     viewRankingButton.addEventListener('click', () => {
         startScreen.style.display = 'none';
         rankingScreen.style.display = 'flex';
-        displayRanking(); // 랭킹 화면으로 갈 때마다 서버에서 최신 랭킹 로드
+        displayRanking();
     });
 
     backToStartButton.addEventListener('click', () => {
@@ -380,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startScreen.style.display = 'flex';
     });
 
+    // 랭킹 초기화 버튼 이벤트 리스너
     resetRankingButton.addEventListener('click', clearRanking);
 
     checkButton.addEventListener('click', checkAnswer);
